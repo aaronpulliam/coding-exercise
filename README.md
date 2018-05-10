@@ -18,31 +18,26 @@ See Backend Technical Assessment document for detailed requirements.
 Design Notes
 ------------
 * Sketch of User Stories:
-    * **Register new user:**   
-    A user can register to use the site. The user provides a username, first name, and last name. 
-    Registration is not allowed if the username is already taken; otherwise, registration is successful.
+    * **Register as a buyer:**   
+    A buyer can register on the site. The buyer provides a first name and last name and receives an id. 
+    * **Register as a seller:**   
+    A seller can register on the site. The seller provides a first name, and last name and receives an id. 
     * **Submit a project:**  
-    A user can submit a project. The project must have a 
-    description, a maximum budget, and bid deadline. The bid deadline must 
-    be in the future. After submitting the project, the user can retrieve the 
-    project details.
+    A buyer can submit a project. The project must have a description, a maximum budget, and bid deadline. 
+    The bid deadline must be in the future. After submitting, the buyer receives a project ID. The current 
+    project details can be retrieved using the project ID.
     * **View projects:**  
-    A user can view a list of projects. For each project, 
-    the description, maximum budget, and bid deadline must be returned.
+    A seller or buyer can view a list of projects. For each project, the description, maximum budget, 
+    and bid deadline must be returned.
     * **Submit a bid:**  
-    A user can submit a bid for a project. The bid must include
-    an amount. The bid amount must be less than the maximum budget,
-    less than any existing bid for the project, and greater than zero. When viewing 
-    projects, the current lowest bid for a project must be shown.
+    A buyer can submit a bid for a project. The bid must include an amount. The bid amount must be less 
+    than the maximum budget, less than the lowest bid for the project, and greater than zero. 
+    When viewing projects, the lowest bid for a project must be shown.
     * **Winning a bid:**  
-    When the bid deadline is reached, the lowest bid for the 
-    project wins and further bidding is not allowed.
-    * **View your projects:**   
-    A user can retrieve a list of their projects.
-    * **View your bids:**  
-    A user can retrieve a list of bids they have made.
+    When the bid deadline is reached, the lowest bid for the project wins and further bidding is not allowed.
     
 * Entities:
-    * Users (Sellers and Buyers)
+    * Sellers
+    * Buyers
     * Projects
     * Bids
