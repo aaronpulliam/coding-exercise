@@ -2,6 +2,8 @@ package com.intuit.cg.backendtechassessment.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,4 +31,11 @@ public class BuyerController {
     public BuyerDTO registerBuyer(@RequestBody BuyerDTO buyerDTO) {
         return modelConverter.fromBuyer(buyerService.createBuyer(modelConverter.toBuyer(buyerDTO)));
     }
+
+    @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    public BuyerDTO getBuyerById(@PathVariable long id) {
+        return modelConverter.fromBuyer(buyerService.getBuyerById(id));
+    }
+
 }

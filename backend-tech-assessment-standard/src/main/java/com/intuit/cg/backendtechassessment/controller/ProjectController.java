@@ -11,31 +11,31 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.intuit.cg.backendtechassessment.controller.requestmappings.RequestMappings;
-import com.intuit.cg.backendtechassessment.dto.SellerDTO;
-import com.intuit.cg.backendtechassessment.service.SellerService;
+import com.intuit.cg.backendtechassessment.dto.ProjectDTO;
+import com.intuit.cg.backendtechassessment.service.ProjectService;
 
 @RestController
-@RequestMapping(RequestMappings.SELLERS)
-public class SellerController {
+@RequestMapping(RequestMappings.PROJECTS)
+public class ProjectController {
 
-    private SellerService sellerService;
+    private ProjectService projectService;
     private ModelConverter modelConverter;
 
-    public SellerController(SellerService sellerService, ModelConverter modelConverter) {
-        this.sellerService = sellerService;
+    public ProjectController(ProjectService projectService, ModelConverter modelConverter) {
+        this.projectService = projectService;
         this.modelConverter = modelConverter;
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    public SellerDTO registerSeller(@RequestBody SellerDTO sellerDTO) {
-        return modelConverter.fromSeller(sellerService.createSeller(modelConverter.toSeller(sellerDTO)));
+    public ProjectDTO createProject(@RequestBody ProjectDTO projectDTO) {
+        return modelConverter.fromProject(projectService.createProject(modelConverter.toProject(projectDTO)));
     }
 
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    public SellerDTO getSellectById(@PathVariable long id) {
-        return modelConverter.fromSeller(sellerService.getSellerById(id));
+    public ProjectDTO getProjectById(@PathVariable long id) {
+        return modelConverter.fromProject(projectService.getProjectById(id));
     }
 
 }

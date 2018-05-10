@@ -4,6 +4,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
+import java.time.OffsetDateTime;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +20,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import com.intuit.cg.backendtechassessment.controller.requestmappings.RequestMappings;
 import com.intuit.cg.backendtechassessment.dto.BuyerDTO;
+import com.intuit.cg.backendtechassessment.dto.ProjectDTO;
+import com.intuit.cg.backendtechassessment.dto.SellerDTO;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
@@ -36,32 +40,124 @@ public class BackendTechAssessmentApplicationTestsIT {
 
     @Test
     public void buyerCanRegister() {
-        BuyerDTO buyerDTO = new BuyerDTO();
-        buyerDTO.setFirstName("John");
-        buyerDTO.setLastName("Smith");
-        ResponseEntity<BuyerDTO> responseEntity = restTemplate.postForEntity(getUriForPath(RequestMappings.BUYERS),
-                buyerDTO, BuyerDTO.class);
+        BuyerDTO buyerDTO = getSampleBuyer();
 
-        assertThat(responseEntity.getStatusCode(), is(HttpStatus.CREATED));
-        BuyerDTO createdBuyer = responseEntity.getBody();
+        BuyerDTO createdBuyer = createBuyer(buyerDTO);
+
         assertThat(createdBuyer.getFirstName(), is("John"));
         assertThat(createdBuyer.getLastName(), is("Smith"));
         assertThat(createdBuyer.getId(), is(notNullValue()));
     }
 
-    @Test
-    public void sellerCanRegister() {
+    private BuyerDTO getSampleBuyer() {
         BuyerDTO buyerDTO = new BuyerDTO();
-        buyerDTO.setFirstName("Jane");
-        buyerDTO.setLastName("Doe");
-        ResponseEntity<BuyerDTO> responseEntity = restTemplate.postForEntity(getUriForPath(RequestMappings.SELLERS),
+        buyerDTO.setFirstName("John");
+        buyerDTO.setLastName("Smith");
+        return buyerDTO;
+    }
+
+    private BuyerDTO createBuyer(BuyerDTO buyerDTO) {
+        ResponseEntity<BuyerDTO> responseEntity = restTemplate.postForEntity(getUriForPath(RequestMappings.BUYERS),
                 buyerDTO, BuyerDTO.class);
 
         assertThat(responseEntity.getStatusCode(), is(HttpStatus.CREATED));
         BuyerDTO createdBuyer = responseEntity.getBody();
-        assertThat(createdBuyer.getFirstName(), is("Jane"));
-        assertThat(createdBuyer.getLastName(), is("Doe"));
-        assertThat(createdBuyer.getId(), is(notNullValue()));
+        return createdBuyer;
+    }
+
+    @Test
+    public void retrieveBuyer() {
+        BuyerDTO buyerDTO = getSampleBuyer();
+
+        BuyerDTO createdBuyer = createBuyer(buyerDTO);
+
+        buyerDTO = restTemplate.getForObject(getUriForPath(RequestMappings.BUYERS + "/" + createdBuyer.getId()),
+                BuyerDTO.class);
+
+        assertThat(buyerDTO.getId(), is(createdBuyer.getId()));
+        assertThat(buyerDTO.getFirstName(), is("John"));
+        assertThat(buyerDTO.getLastName(), is("Smith"));
+    }
+
+    @Test
+    public void sellerCanRegister() {
+        SellerDTO sellerDTO = getSampleSeller();
+
+        SellerDTO createdSeller = createSeller(sellerDTO);
+
+        assertThat(createdSeller.getFirstName(), is("Jane"));
+        assertThat(createdSeller.getLastName(), is("Doe"));
+        assertThat(createdSeller.getId(), is(notNullValue()));
+    }
+
+    @Test
+    public void sellerCanSubmitsProjects() {
+        SellerDTO sellerDTO = getSampleSeller();
+        SellerDTO createdSeller = createSeller(sellerDTO);
+
+        OffsetDateTime deadline = OffsetDateTime.now().plusDays(5);
+        ProjectDTO projectDTO = getSampleProjectForSeller(createdSeller, deadline);
+
+        ProjectDTO createdProject = createProject(projectDTO);
+
+        assertThat(createdProject.getDescription(), is("description"));
+        assertThat(createdProject.getDeadline().toEpochSecond(), is(deadline.toEpochSecond()));
+        assertThat(createdProject.getMaximumBudget(), is(10000l));
+        assertThat(createdProject.getSellerDTO(), is(notNullValue()));
+    }
+
+    private ProjectDTO getSampleProjectForSeller(SellerDTO createdSeller, OffsetDateTime deadline) {
+        ProjectDTO projectDTO = new ProjectDTO();
+        projectDTO.setDescription("description");
+        projectDTO.setDeadline(deadline);
+        projectDTO.setMaximumBudget(10000l);
+        SellerDTO projectSeller = new SellerDTO();
+        projectSeller.setId(createdSeller.getId());
+        projectDTO.setSellerDTO(projectSeller);
+        return projectDTO;
+    }
+
+    private SellerDTO getSampleSeller() {
+        SellerDTO sellerDTO = new SellerDTO();
+        sellerDTO.setFirstName("Jane");
+        sellerDTO.setLastName("Doe");
+        return sellerDTO;
+    }
+
+    @Test
+    public void retrieveProject() {
+        SellerDTO sellerDTO = getSampleSeller();
+        SellerDTO createdSeller = createSeller(sellerDTO);
+
+        OffsetDateTime deadline = OffsetDateTime.now().plusDays(5);
+        ProjectDTO projectDTO = getSampleProjectForSeller(createdSeller, deadline);
+
+        ProjectDTO createdProject = createProject(projectDTO);
+
+        projectDTO = restTemplate.getForObject(getUriForPath(RequestMappings.PROJECTS + "/" + createdProject.getId()),
+                ProjectDTO.class);
+
+        assertThat(projectDTO.getId(), is(createdProject.getId()));
+        assertThat(projectDTO.getDescription(), is(createdProject.getDescription()));
+        assertThat(projectDTO.getDeadline(), is(createdProject.getDeadline()));
+        assertThat(projectDTO.getMaximumBudget(), is(createdProject.getMaximumBudget()));
+        assertThat(projectDTO.getSellerDTO().getId(), is(createdProject.getSellerDTO().getId()));
+    }
+
+    private ProjectDTO createProject(ProjectDTO projectDTO) {
+        ResponseEntity<ProjectDTO> responseEntity = restTemplate.postForEntity(getUriForPath(RequestMappings.PROJECTS),
+                projectDTO, ProjectDTO.class);
+        assertThat(responseEntity.getStatusCode(), is(HttpStatus.CREATED));
+        ProjectDTO createdProject = responseEntity.getBody();
+        return createdProject;
+    }
+
+    private SellerDTO createSeller(SellerDTO sellerDTO) {
+        ResponseEntity<SellerDTO> responseEntity = restTemplate.postForEntity(getUriForPath(RequestMappings.SELLERS),
+                sellerDTO, SellerDTO.class);
+
+        assertThat(responseEntity.getStatusCode(), is(HttpStatus.CREATED));
+        return responseEntity.getBody();
     }
 
 }
