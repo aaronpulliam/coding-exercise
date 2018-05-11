@@ -34,7 +34,7 @@ public class BuyerController {
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     public BuyerDTO getBuyerById(@PathVariable long id) {
-        return buyerService.getBuyerById(id);
+        return buyerService.getBuyerDTOById(id);
     }
 
 }

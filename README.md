@@ -27,14 +27,10 @@ Design Notes
     The bid deadline must be in the future. After submitting, the buyer receives a project ID. The current 
     project details can be retrieved using the project ID.
     * **Submit a bid:**  
-    A buyer can submit a bid for a project. The bid must include an amount. The bid amount must be less 
-    than the maximum budget, less than the lowest bid for the project, and greater than zero. 
-    When viewing projects, the lowest bid for a project must be shown.
-    * **Winning a bid:**  
-    When the bid deadline is reached, the lowest bid for the project wins and further bidding is not allowed.
-    * **View projects:**  
-    A seller or buyer can view a list of projects. For each project, the description, maximum budget, 
-    and bid deadline must be returned.
+    A buyer can submit a bid for a project as long as the deadline has not passed. The bid must include an 
+    amount. The bid amount must be less than the maximum budget, less than the lowest bid for the project,
+    and greater than zero. When viewing projects, the lowest bid amount for a project must be shown and
+    if the deadline has passed then the winning buyer id (if any) must be given.
     
 * Entities:
     * Sellers

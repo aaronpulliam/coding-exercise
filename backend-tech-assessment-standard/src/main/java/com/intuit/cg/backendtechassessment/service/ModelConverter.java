@@ -1,5 +1,7 @@
 package com.intuit.cg.backendtechassessment.service;
 
+import java.time.OffsetDateTime;
+
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 
@@ -43,6 +45,9 @@ public class ModelConverter {
         Bid lowestBid = project.getLowestBid();
         if (lowestBid != null) {
             projectDTO.setLowestBidAmount(lowestBid.getAmount());
+            if (!project.getDeadline().isAfter(OffsetDateTime.now())) {
+                projectDTO.setWinningBidderId(lowestBid.getBuyer().getId());
+            }
         }
         return projectDTO;
     }

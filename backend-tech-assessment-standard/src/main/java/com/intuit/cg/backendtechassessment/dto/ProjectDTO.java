@@ -10,6 +10,7 @@ public class ProjectDTO {
     private OffsetDateTime deadline;
     private Long sellerId;
     private Long lowestBidAmount;
+    private Long winningBidderId;
 
     public Long getId() {
         return id;
@@ -57,6 +58,14 @@ public class ProjectDTO {
 
     public void setSellerId(Long sellerId) {
         this.sellerId = sellerId;
+    }
+
+    public Long getWinningBidderId() {
+        return winningBidderId;
+    }
+
+    public void setWinningBidderId(Long winningBidderId) {
+        this.winningBidderId = winningBidderId;
     }
 
 }

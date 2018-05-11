@@ -33,7 +33,7 @@ public class SellerController {
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     public SellerDTO getSellectById(@PathVariable long id) {
-        return sellerService.getSellerById(id);
+        return sellerService.getSellerDTOById(id);
     }
 
 }

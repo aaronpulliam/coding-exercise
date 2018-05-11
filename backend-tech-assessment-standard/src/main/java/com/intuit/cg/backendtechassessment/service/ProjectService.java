@@ -4,13 +4,13 @@ import java.time.OffsetDateTime;
 
 import javax.transaction.Transactional;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.intuit.cg.backendtechassessment.dto.ProjectDTO;
 import com.intuit.cg.backendtechassessment.model.Bid;
 import com.intuit.cg.backendtechassessment.model.Project;
 import com.intuit.cg.backendtechassessment.repository.ProjectRepository;
-import com.intuit.cg.backendtechassessment.repository.SellerRepository;
 import com.intuit.cg.backendtechassessment.service.exception.NotFoundException;
 import com.intuit.cg.backendtechassessment.service.exception.OperationNotPermittedException;
 
@@ -18,16 +18,12 @@ import com.intuit.cg.backendtechassessment.service.exception.OperationNotPermitt
 @Transactional
 public class ProjectService {
 
+    @Autowired
     private ProjectRepository projectRepository;
-    private SellerRepository sellerRepository;
+    @Autowired
+    private SellerService sellerService;
+    @Autowired
     private ModelConverter modelConverter;
-
-    public ProjectService(ProjectRepository projectRepository, SellerRepository sellerRepository,
-            ModelConverter modelConverter) {
-        this.projectRepository = projectRepository;
-        this.sellerRepository = sellerRepository;
-        this.modelConverter = modelConverter;
-    }
 
     public ProjectDTO createProject(ProjectDTO projectDTO) {
         Project project = modelConverter.toProject(projectDTO);
@@ -41,13 +37,12 @@ public class ProjectService {
         if (sellerId == null) {
             throw new OperationNotPermittedException("Project must have a seller");
         }
-        project.setSeller(sellerRepository.findById(sellerId).orElseThrow(() -> new NotFoundException(
-                "Seller not found")));
+        project.setSeller(sellerService.getSellerById(sellerId));
 
         return modelConverter.fromProject(projectRepository.save(project));
     }
 
-    private Project getProjectById(long id) {
+    Project getProjectById(long id) {
         return projectRepository.findById(id).orElseThrow(() -> new NotFoundException("Project not found"));
     }
 

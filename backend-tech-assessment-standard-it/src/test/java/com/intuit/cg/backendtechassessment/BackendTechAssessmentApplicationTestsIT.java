@@ -5,6 +5,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
 import java.time.OffsetDateTime;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -181,12 +182,13 @@ public class BackendTechAssessmentApplicationTestsIT {
     }
 
     @Test
-    public void submitBid() {
+    public void submitBid() throws InterruptedException {
 
         BuyerDTO createdBuyer = createBuyer(getSampleBuyer());
         SellerDTO createdSeller = createSeller(getSampleSeller());
 
-        OffsetDateTime deadline = OffsetDateTime.now().plusDays(5);
+        OffsetDateTime deadline = OffsetDateTime.now().plusNanos(TimeUnit.NANOSECONDS.convert(500,
+                TimeUnit.MILLISECONDS));
         ProjectDTO createdProject = createProject(getSampleProjectForSeller(createdSeller, deadline));
 
         BidDTO bidDTO = new BidDTO();
@@ -219,6 +221,24 @@ public class BackendTechAssessmentApplicationTestsIT {
         assertThat(errorResponseEntity.getStatusCode(), is(HttpStatus.CONFLICT));
         ErrorDetails errorDetails = errorResponseEntity.getBody();
         assertThat(errorDetails.getMessage(), is("Bid must be lower than " + (MAX_BUDGET_AMOUNT - 10)));
+
+        // submit a bid after bidding closes
+        while (deadline.isAfter(OffsetDateTime.now())) {
+            Thread.sleep(10);
+        }
+        bidDTO.setAmount(MAX_BUDGET_AMOUNT - 20);
+        errorResponseEntity = restTemplate.postForEntity(getUriForPath(RequestMappings.BIDS), bidDTO,
+                ErrorDetails.class);
+        assertThat(errorResponseEntity.getStatusCode(), is(HttpStatus.CONFLICT));
+        errorDetails = errorResponseEntity.getBody();
+        assertThat(errorDetails.getMessage(), is("Bid deadline has passed"));
+
+        // checking for winning buyer id
+        createdProject = restTemplate.getForObject(getUriForPath(RequestMappings.PROJECTS + "/" + createdProject
+                .getId()), ProjectDTO.class);
+
+        assertThat(createdProject.getLowestBidAmount(), is(MAX_BUDGET_AMOUNT - 10));
+        assertThat(createdProject.getWinningBidderId(), is(createdBuyer.getId()));
     }
 
 }
