@@ -218,7 +218,7 @@ public class BackendTechAssessmentApplicationTestsIT {
         bidDTO.setAmount(MAX_BUDGET_AMOUNT - 5);
         ResponseEntity<ErrorDetails> errorResponseEntity = restTemplate.postForEntity(getUriForPath(
                 RequestMappings.BIDS), bidDTO, ErrorDetails.class);
-        assertThat(errorResponseEntity.getStatusCode(), is(HttpStatus.CONFLICT));
+        assertThat(errorResponseEntity.getStatusCode(), is(HttpStatus.UNPROCESSABLE_ENTITY));
         ErrorDetails errorDetails = errorResponseEntity.getBody();
         assertThat(errorDetails.getMessage(), is("Bid must be lower than " + (MAX_BUDGET_AMOUNT - 10)));
 
@@ -229,7 +229,7 @@ public class BackendTechAssessmentApplicationTestsIT {
         bidDTO.setAmount(MAX_BUDGET_AMOUNT - 20);
         errorResponseEntity = restTemplate.postForEntity(getUriForPath(RequestMappings.BIDS), bidDTO,
                 ErrorDetails.class);
-        assertThat(errorResponseEntity.getStatusCode(), is(HttpStatus.CONFLICT));
+        assertThat(errorResponseEntity.getStatusCode(), is(HttpStatus.UNPROCESSABLE_ENTITY));
         errorDetails = errorResponseEntity.getBody();
         assertThat(errorDetails.getMessage(), is("Bid deadline has passed"));
 

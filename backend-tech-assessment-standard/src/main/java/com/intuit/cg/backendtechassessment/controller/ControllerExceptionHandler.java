@@ -3,6 +3,8 @@ package com.intuit.cg.backendtechassessment.controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -38,11 +40,23 @@ public class ControllerExceptionHandler {
         return new ErrorDetails(e.getMessage());
     }
 
-    @ResponseStatus(HttpStatus.CONFLICT)
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
     @ExceptionHandler(OperationNotPermittedException.class)
     @ResponseBody
     public ErrorDetails handleConflict(Exception e) {
         return new ErrorDetails(e.getMessage());
+    }
+
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseBody
+    public ErrorDetails handleValidation(MethodArgumentNotValidException e) {
+        FieldError fieldError = e.getBindingResult().getFieldError();
+        String message = null;
+        if (fieldError != null) {
+            message = fieldError.getDefaultMessage();
+        }
+        return new ErrorDetails(message != null ? message : "Validation failed");
     }
 
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)

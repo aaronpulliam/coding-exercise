@@ -1,5 +1,7 @@
 package com.intuit.cg.backendtechassessment.controller;
 
+import javax.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +17,11 @@ import com.intuit.cg.backendtechassessment.dto.BuyerDTO;
 import com.intuit.cg.backendtechassessment.service.BuyerService;
 import com.intuit.cg.backendtechassessment.service.ModelConverter;
 
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+
 @RestController
 @RequestMapping(RequestMappings.BUYERS)
 public class BuyerController {
@@ -27,14 +34,20 @@ public class BuyerController {
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    public BuyerDTO registerBuyer(@RequestBody BuyerDTO buyerDTO) {
-        return buyerService.createBuyer(buyerDTO);
+    @ApiOperation("Register a buyer")
+    @ApiResponses(value = { @ApiResponse(code = 201, message = "Buyer registered"), @ApiResponse(code = 422,
+            message = "Buyer could not be registered. Response body contains message with further details") })
+    public BuyerDTO registerBuyer(@RequestBody @ApiParam("buyer's information") @Valid BuyerDTO buyer) {
+        return buyerService.createBuyer(buyer);
     }
 
-    @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/{buyerId}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    public BuyerDTO getBuyerById(@PathVariable long id) {
-        return buyerService.getBuyerDTOById(id);
+    @ApiOperation("Retrieve a buyer's information")
+    @ApiResponses(value = { @ApiResponse(code = 200, message = "Buyer's information returned"), @ApiResponse(code = 404,
+            message = "Buyer with that id does not exist") })
+    public BuyerDTO getBuyerById(@PathVariable @ApiParam("buyer id") long buyerId) {
+        return buyerService.getBuyerDTOById(buyerId);
     }
 
 }

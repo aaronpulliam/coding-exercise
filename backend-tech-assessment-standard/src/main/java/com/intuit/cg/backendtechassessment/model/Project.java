@@ -23,10 +23,10 @@ public class Project {
     @Version
     private int version;
 
-    @Column(name = "firstName", nullable = false)
+    @Column(name = "description", columnDefinition = "TEXT", nullable = false)
     private String description;
 
-    @Column(name = "maximumBudget", nullable = false)
+    @Column(name = "maximum_budget", nullable = false)
     private Long maximumBudget;
 
     @Column(name = "deadline", nullable = false)
@@ -37,7 +37,7 @@ public class Project {
     private Seller seller;
 
     @ManyToOne
-    @JoinColumn(name = "bid_id", nullable = true)
+    @JoinColumn(name = "lowest_bid_id", nullable = true)
     private Bid lowestBid;
 
     protected Project() {

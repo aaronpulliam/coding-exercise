@@ -1,7 +1,5 @@
 package com.intuit.cg.backendtechassessment.service;
 
-import java.time.OffsetDateTime;
-
 import javax.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,12 +25,6 @@ public class ProjectService {
 
     public ProjectDTO createProject(ProjectDTO projectDTO) {
         Project project = modelConverter.toProject(projectDTO);
-        if (project.getMaximumBudget() <= 0) {
-            throw new OperationNotPermittedException("Maximum budget must be greater than zero");
-        }
-        if (project.getDeadline().isBefore(OffsetDateTime.now())) {
-            throw new OperationNotPermittedException("Deadline cannot be in the past");
-        }
         Long sellerId = projectDTO.getSellerId();
         if (sellerId == null) {
             throw new OperationNotPermittedException("Project must have a seller");
@@ -43,11 +35,13 @@ public class ProjectService {
     }
 
     Project getProjectById(long id) {
-        return projectRepository.findById(id).orElseThrow(() -> new NotFoundException("Project not found"));
+        return projectRepository.findById(id).orElseThrow(() -> new OperationNotPermittedException(
+                "Project not found"));
     }
 
     public ProjectDTO getProjectDTOById(long id) {
-        return modelConverter.fromProject(getProjectById(id));
+        return modelConverter.fromProject(projectRepository.findById(id).orElseThrow(() -> new NotFoundException(
+                "Project not found")));
     }
 
     public void validateBidIsLower(long projectId, Bid bid) {

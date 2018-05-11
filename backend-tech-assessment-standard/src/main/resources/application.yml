@@ -22,3 +22,10 @@ spring:
       settings:
         trace: false
         web-allow-others: false
+server:
+  tomcat:
+    basedir: target/tomcat
+    accesslog:
+      enabled: true
+      pattern: "%h %u %t \"%r\" %s %b"
+      

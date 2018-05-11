@@ -9,6 +9,7 @@ import com.intuit.cg.backendtechassessment.dto.BuyerDTO;
 import com.intuit.cg.backendtechassessment.model.Buyer;
 import com.intuit.cg.backendtechassessment.repository.BuyerRepository;
 import com.intuit.cg.backendtechassessment.service.exception.NotFoundException;
+import com.intuit.cg.backendtechassessment.service.exception.OperationNotPermittedException;
 
 @Service
 @Transactional
@@ -24,11 +25,12 @@ public class BuyerService {
     }
 
     public BuyerDTO getBuyerDTOById(long id) {
-        return modelConverter.fromBuyer(getBuyerById(id));
+        return modelConverter.fromBuyer(buyerRepository.findById(id).orElseThrow(() -> new NotFoundException(
+                "Buyer not found")));
     }
 
     Buyer getBuyerById(long id) {
-        return buyerRepository.findById(id).orElseThrow(() -> new NotFoundException("Buyer not found"));
+        return buyerRepository.findById(id).orElseThrow(() -> new OperationNotPermittedException("Buyer not found"));
     }
 
 }

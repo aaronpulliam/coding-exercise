@@ -1,8 +1,19 @@
 package com.intuit.cg.backendtechassessment.dto;
 
+import javax.validation.constraints.NotBlank;
+
+import io.swagger.annotations.ApiModelProperty;
+
 public class SellerDTO {
+    @ApiModelProperty(notes = "Seller identifier (populated by database)")
     private Long id;
+
+    @ApiModelProperty(notes = "Seller's first name")
+    @NotBlank(message = "Seller's firstName cannot be blank")
     private String firstName;
+
+    @ApiModelProperty(notes = "Seller's last name")
+    @NotBlank(message = "Seller's lastName cannot be blank")
     private String lastName;
 
     public Long getId() {

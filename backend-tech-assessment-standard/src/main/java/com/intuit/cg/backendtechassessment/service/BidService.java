@@ -28,21 +28,15 @@ public class BidService {
 
     public BidDTO submitBid(BidDTO bidDTO) {
         Bid bid = modelConverter.toBid(bidDTO);
-        if (bid.getAmount() <= 0) {
-            throw new OperationNotPermittedException("Bid must be greater than zero");
-        }
         Long buyerId = bid.getBuyerId();
-        if (buyerId == null) {
-            throw new OperationNotPermittedException("Bid must have a buyer");
-        }
         Long projectId = bid.getProjectId();
-        if (projectId == null) {
-            throw new OperationNotPermittedException("Bid must have a project");
-        }
 
         Project project = projectService.getProjectById(projectId);
         if (!project.getDeadline().isAfter(OffsetDateTime.now())) {
             throw new OperationNotPermittedException("Bid deadline has passed");
+        }
+        if (bid.getAmount() > project.getMaximumBudget()) {
+            throw new OperationNotPermittedException("Bid exceeds project's maximum budget");
         }
 
         bid.setBuyer(buyerService.getBuyerById(buyerId));
