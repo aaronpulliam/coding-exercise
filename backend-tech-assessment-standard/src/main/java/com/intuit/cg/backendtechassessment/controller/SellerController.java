@@ -19,23 +19,21 @@ import com.intuit.cg.backendtechassessment.service.SellerService;
 public class SellerController {
 
     private SellerService sellerService;
-    private ModelConverter modelConverter;
 
-    public SellerController(SellerService sellerService, ModelConverter modelConverter) {
+    public SellerController(SellerService sellerService) {
         this.sellerService = sellerService;
-        this.modelConverter = modelConverter;
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     public SellerDTO registerSeller(@RequestBody SellerDTO sellerDTO) {
-        return modelConverter.fromSeller(sellerService.createSeller(modelConverter.toSeller(sellerDTO)));
+        return sellerService.createSeller(sellerDTO);
     }
 
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     public SellerDTO getSellectById(@PathVariable long id) {
-        return modelConverter.fromSeller(sellerService.getSellerById(id));
+        return sellerService.getSellerById(id);
     }
 
 }

@@ -8,7 +8,8 @@ public class ProjectDTO {
     private String description;
     private Long maximumBudget;
     private OffsetDateTime deadline;
-    private SellerDTO sellerDTO;
+    private Long sellerId;
+    private Long lowestBidAmount;
 
     public Long getId() {
         return id;
@@ -42,12 +43,20 @@ public class ProjectDTO {
         this.deadline = deadline;
     }
 
-    public SellerDTO getSellerDTO() {
-        return sellerDTO;
+    public Long getLowestBidAmount() {
+        return lowestBidAmount;
     }
 
-    public void setSellerDTO(SellerDTO sellerDTO) {
-        this.sellerDTO = sellerDTO;
+    public void setLowestBidAmount(Long lowestBidAmount) {
+        this.lowestBidAmount = lowestBidAmount;
+    }
+
+    public Long getSellerId() {
+        return sellerId;
+    }
+
+    public void setSellerId(Long sellerId) {
+        this.sellerId = sellerId;
     }
 
 }

@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-import com.intuit.cg.backendtechassessment.controller.ModelConverter;
+import com.intuit.cg.backendtechassessment.service.ModelConverter;
 
 @SpringBootApplication
 @EnableTransactionManagement

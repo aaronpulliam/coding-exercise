@@ -4,7 +4,7 @@ import javax.transaction.Transactional;
 
 import org.springframework.stereotype.Service;
 
-import com.intuit.cg.backendtechassessment.model.Buyer;
+import com.intuit.cg.backendtechassessment.dto.BuyerDTO;
 import com.intuit.cg.backendtechassessment.repository.BuyerRepository;
 import com.intuit.cg.backendtechassessment.service.exception.NotFoundException;
 
@@ -13,17 +13,20 @@ import com.intuit.cg.backendtechassessment.service.exception.NotFoundException;
 public class BuyerService {
 
     private BuyerRepository buyerRepository;
+    private ModelConverter modelConverter;
 
-    public BuyerService(BuyerRepository buyerRepository) {
+    public BuyerService(BuyerRepository buyerRepository, ModelConverter modelConverter) {
         this.buyerRepository = buyerRepository;
+        this.modelConverter = modelConverter;
     }
 
-    public Buyer createBuyer(Buyer buyer) {
-        return buyerRepository.save(buyer);
+    public BuyerDTO createBuyer(BuyerDTO buyerDTO) {
+        return modelConverter.fromBuyer(buyerRepository.save(modelConverter.toBuyer(buyerDTO)));
     }
 
-    public Buyer getBuyerById(long id) {
-        return buyerRepository.findById(id).orElseThrow(() -> new NotFoundException("Buyer not found"));
+    public BuyerDTO getBuyerById(long id) {
+        return modelConverter.fromBuyer(buyerRepository.findById(id).orElseThrow(() -> new NotFoundException(
+                "Buyer not found")));
     }
 
 }

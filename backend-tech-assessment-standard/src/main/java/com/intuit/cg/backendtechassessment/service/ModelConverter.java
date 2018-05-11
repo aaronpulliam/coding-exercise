@@ -1,10 +1,13 @@
-package com.intuit.cg.backendtechassessment.controller;
+package com.intuit.cg.backendtechassessment.service;
 
 import org.modelmapper.ModelMapper;
+import org.modelmapper.convention.MatchingStrategies;
 
+import com.intuit.cg.backendtechassessment.dto.BidDTO;
 import com.intuit.cg.backendtechassessment.dto.BuyerDTO;
 import com.intuit.cg.backendtechassessment.dto.ProjectDTO;
 import com.intuit.cg.backendtechassessment.dto.SellerDTO;
+import com.intuit.cg.backendtechassessment.model.Bid;
 import com.intuit.cg.backendtechassessment.model.Buyer;
 import com.intuit.cg.backendtechassessment.model.Project;
 import com.intuit.cg.backendtechassessment.model.Seller;
@@ -15,6 +18,7 @@ public class ModelConverter {
 
     public ModelConverter(ModelMapper modelMapper) {
         this.modelMapper = modelMapper;
+        modelMapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
     }
 
     public BuyerDTO fromBuyer(Buyer buyer) {
@@ -34,19 +38,25 @@ public class ModelConverter {
     }
 
     public ProjectDTO fromProject(Project project) {
-        ProjectDTO convertedProjectDTO = modelMapper.map(project, ProjectDTO.class);
-        if (project.getSeller() != null) {
-            convertedProjectDTO.setSellerDTO(fromSeller(project.getSeller()));
+        ProjectDTO projectDTO = modelMapper.map(project, ProjectDTO.class);
+        projectDTO.setSellerId(project.getSeller().getId());
+        Bid lowestBid = project.getLowestBid();
+        if (lowestBid != null) {
+            projectDTO.setLowestBidAmount(lowestBid.getAmount());
         }
-        return convertedProjectDTO;
+        return projectDTO;
     }
 
     public Project toProject(ProjectDTO projectDTO) {
-        Project convertedProject = modelMapper.map(projectDTO, Project.class);
-        if (projectDTO.getSellerDTO() != null) {
-            convertedProject.setSeller(toSeller(projectDTO.getSellerDTO()));
-        }
-        return convertedProject;
+        return modelMapper.map(projectDTO, Project.class);
+    }
+
+    public Bid toBid(BidDTO bidDTO) {
+        return modelMapper.map(bidDTO, Bid.class);
+    }
+
+    public BidDTO fromBid(Bid bid) {
+        return modelMapper.map(bid, BidDTO.class);
     }
 
 }

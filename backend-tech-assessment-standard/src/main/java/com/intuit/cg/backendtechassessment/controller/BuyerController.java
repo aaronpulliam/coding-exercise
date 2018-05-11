@@ -13,29 +13,28 @@ import org.springframework.web.bind.annotation.RestController;
 import com.intuit.cg.backendtechassessment.controller.requestmappings.RequestMappings;
 import com.intuit.cg.backendtechassessment.dto.BuyerDTO;
 import com.intuit.cg.backendtechassessment.service.BuyerService;
+import com.intuit.cg.backendtechassessment.service.ModelConverter;
 
 @RestController
 @RequestMapping(RequestMappings.BUYERS)
 public class BuyerController {
 
     private BuyerService buyerService;
-    private ModelConverter modelConverter;
 
     public BuyerController(BuyerService buyerService, ModelConverter modelConverter) {
         this.buyerService = buyerService;
-        this.modelConverter = modelConverter;
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     public BuyerDTO registerBuyer(@RequestBody BuyerDTO buyerDTO) {
-        return modelConverter.fromBuyer(buyerService.createBuyer(modelConverter.toBuyer(buyerDTO)));
+        return buyerService.createBuyer(buyerDTO);
     }
 
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     public BuyerDTO getBuyerById(@PathVariable long id) {
-        return modelConverter.fromBuyer(buyerService.getBuyerById(id));
+        return buyerService.getBuyerById(id);
     }
 
 }

@@ -19,23 +19,21 @@ import com.intuit.cg.backendtechassessment.service.ProjectService;
 public class ProjectController {
 
     private ProjectService projectService;
-    private ModelConverter modelConverter;
 
-    public ProjectController(ProjectService projectService, ModelConverter modelConverter) {
+    public ProjectController(ProjectService projectService) {
         this.projectService = projectService;
-        this.modelConverter = modelConverter;
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     public ProjectDTO createProject(@RequestBody ProjectDTO projectDTO) {
-        return modelConverter.fromProject(projectService.createProject(modelConverter.toProject(projectDTO)));
+        return projectService.createProject(projectDTO);
     }
 
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     public ProjectDTO getProjectById(@PathVariable long id) {
-        return modelConverter.fromProject(projectService.getProjectById(id));
+        return projectService.getProjectDTOById(id);
     }
 
 }

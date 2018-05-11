@@ -4,7 +4,7 @@ import javax.transaction.Transactional;
 
 import org.springframework.stereotype.Service;
 
-import com.intuit.cg.backendtechassessment.model.Seller;
+import com.intuit.cg.backendtechassessment.dto.SellerDTO;
 import com.intuit.cg.backendtechassessment.repository.SellerRepository;
 import com.intuit.cg.backendtechassessment.service.exception.NotFoundException;
 
@@ -13,17 +13,20 @@ import com.intuit.cg.backendtechassessment.service.exception.NotFoundException;
 public class SellerService {
 
     private SellerRepository sellerRepository;
+    private ModelConverter modelConverter;
 
-    public SellerService(SellerRepository sellerRepository) {
+    public SellerService(SellerRepository sellerRepository, ModelConverter modelConverter) {
         this.sellerRepository = sellerRepository;
+        this.modelConverter = modelConverter;
     }
 
-    public Seller createSeller(Seller seller) {
-        return sellerRepository.save(seller);
+    public SellerDTO createSeller(SellerDTO sellerDTO) {
+        return modelConverter.fromSeller(sellerRepository.save(modelConverter.toSeller(sellerDTO)));
     }
 
-    public Seller getSellerById(long id) {
-        return sellerRepository.findById(id).orElseThrow(() -> new NotFoundException("Seller not found"));
+    public SellerDTO getSellerById(long id) {
+        return modelConverter.fromSeller(sellerRepository.findById(id).orElseThrow(() -> new NotFoundException(
+                "Seller not found")));
     }
 
 }

@@ -1,9 +1,13 @@
 package com.intuit.cg.backendtechassessment.model;
 
+import java.util.Set;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Version;
 
@@ -24,6 +28,9 @@ public class Buyer {
 
     @Column(name = "lastName", nullable = false)
     private String lastName;
+
+    @OneToMany(mappedBy = "buyer", fetch = FetchType.LAZY)
+    private Set<Bid> bids;
 
     protected Buyer() {
     }
@@ -63,6 +70,14 @@ public class Buyer {
 
     public void setLastName(String lastName) {
         this.lastName = lastName;
+    }
+
+    public Set<Bid> getBids() {
+        return bids;
+    }
+
+    public void setBids(Set<Bid> bids) {
+        this.bids = bids;
     }
 
 }

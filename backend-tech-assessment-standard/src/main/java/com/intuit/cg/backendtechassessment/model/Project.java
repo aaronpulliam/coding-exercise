@@ -33,17 +33,15 @@ public class Project {
     private OffsetDateTime deadline;
 
     @ManyToOne
-    @JoinColumn(name = "seller_id")
+    @JoinColumn(name = "seller_id", nullable = false)
     private Seller seller;
+
+    @ManyToOne
+    @JoinColumn(name = "bid_id", nullable = true)
+    private Bid lowestBid;
 
     protected Project() {
 
-    }
-
-    public Project(String description, Long maximumBudget, OffsetDateTime deadline) {
-        this.description = description;
-        this.maximumBudget = maximumBudget;
-        this.deadline = deadline;
     }
 
     public Long getId() {
@@ -92,6 +90,14 @@ public class Project {
 
     public void setSeller(Seller seller) {
         this.seller = seller;
+    }
+
+    public Bid getLowestBid() {
+        return lowestBid;
+    }
+
+    public void setLowestBid(Bid lowestBid) {
+        this.lowestBid = lowestBid;
     }
 
 }

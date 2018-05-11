@@ -18,7 +18,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import com.intuit.cg.backendtechassessment.controller.ControllerExceptionHandler.ErrorDetails;
 import com.intuit.cg.backendtechassessment.controller.requestmappings.RequestMappings;
+import com.intuit.cg.backendtechassessment.dto.BidDTO;
 import com.intuit.cg.backendtechassessment.dto.BuyerDTO;
 import com.intuit.cg.backendtechassessment.dto.ProjectDTO;
 import com.intuit.cg.backendtechassessment.dto.SellerDTO;
@@ -27,6 +29,8 @@ import com.intuit.cg.backendtechassessment.dto.SellerDTO;
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 public class BackendTechAssessmentApplicationTestsIT {
+
+    private static final long MAX_BUDGET_AMOUNT = 10000l;
 
     @LocalServerPort
     private int port;
@@ -102,8 +106,8 @@ public class BackendTechAssessmentApplicationTestsIT {
 
         assertThat(createdProject.getDescription(), is("description"));
         assertThat(createdProject.getDeadline().toEpochSecond(), is(deadline.toEpochSecond()));
-        assertThat(createdProject.getMaximumBudget(), is(10000l));
-        assertThat(createdProject.getSellerDTO(), is(notNullValue()));
+        assertThat(createdProject.getMaximumBudget(), is(MAX_BUDGET_AMOUNT));
+        assertThat(createdProject.getSellerId(), is(notNullValue()));
     }
 
     private ProjectDTO getSampleProjectForSeller(SellerDTO createdSeller, OffsetDateTime deadline) {
@@ -113,7 +117,7 @@ public class BackendTechAssessmentApplicationTestsIT {
         projectDTO.setMaximumBudget(10000l);
         SellerDTO projectSeller = new SellerDTO();
         projectSeller.setId(createdSeller.getId());
-        projectDTO.setSellerDTO(projectSeller);
+        projectDTO.setSellerId(createdSeller.getId());
         return projectDTO;
     }
 
@@ -122,6 +126,23 @@ public class BackendTechAssessmentApplicationTestsIT {
         sellerDTO.setFirstName("Jane");
         sellerDTO.setLastName("Doe");
         return sellerDTO;
+    }
+
+    @Test
+    public void submitProject() {
+        SellerDTO sellerDTO = getSampleSeller();
+        SellerDTO createdSeller = createSeller(sellerDTO);
+
+        OffsetDateTime deadline = OffsetDateTime.now().plusDays(5);
+        ProjectDTO projectDTO = getSampleProjectForSeller(createdSeller, deadline);
+
+        ProjectDTO createdProject = createProject(projectDTO);
+
+        assertThat(createdProject.getId(), is(notNullValue()));
+        assertThat(createdProject.getDescription(), is(projectDTO.getDescription()));
+        assertThat(createdProject.getDeadline().toEpochSecond(), is(projectDTO.getDeadline().toEpochSecond()));
+        assertThat(createdProject.getMaximumBudget(), is(projectDTO.getMaximumBudget()));
+        assertThat(createdProject.getSellerId(), is(projectDTO.getSellerId()));
     }
 
     @Test
@@ -141,15 +162,14 @@ public class BackendTechAssessmentApplicationTestsIT {
         assertThat(projectDTO.getDescription(), is(createdProject.getDescription()));
         assertThat(projectDTO.getDeadline(), is(createdProject.getDeadline()));
         assertThat(projectDTO.getMaximumBudget(), is(createdProject.getMaximumBudget()));
-        assertThat(projectDTO.getSellerDTO().getId(), is(createdProject.getSellerDTO().getId()));
+        assertThat(createdSeller.getId(), is(createdProject.getSellerId()));
     }
 
     private ProjectDTO createProject(ProjectDTO projectDTO) {
         ResponseEntity<ProjectDTO> responseEntity = restTemplate.postForEntity(getUriForPath(RequestMappings.PROJECTS),
                 projectDTO, ProjectDTO.class);
         assertThat(responseEntity.getStatusCode(), is(HttpStatus.CREATED));
-        ProjectDTO createdProject = responseEntity.getBody();
-        return createdProject;
+        return responseEntity.getBody();
     }
 
     private SellerDTO createSeller(SellerDTO sellerDTO) {
@@ -158,6 +178,47 @@ public class BackendTechAssessmentApplicationTestsIT {
 
         assertThat(responseEntity.getStatusCode(), is(HttpStatus.CREATED));
         return responseEntity.getBody();
+    }
+
+    @Test
+    public void submitBid() {
+
+        BuyerDTO createdBuyer = createBuyer(getSampleBuyer());
+        SellerDTO createdSeller = createSeller(getSampleSeller());
+
+        OffsetDateTime deadline = OffsetDateTime.now().plusDays(5);
+        ProjectDTO createdProject = createProject(getSampleProjectForSeller(createdSeller, deadline));
+
+        BidDTO bidDTO = new BidDTO();
+        bidDTO.setBuyerId(createdBuyer.getId());
+        bidDTO.setProjectId(createdProject.getId());
+        bidDTO.setAmount(MAX_BUDGET_AMOUNT - 10);
+
+        // post initial bid
+        ResponseEntity<BidDTO> responseEntity = restTemplate.postForEntity(getUriForPath(RequestMappings.BIDS), bidDTO,
+                BidDTO.class);
+
+        assertThat(responseEntity.getStatusCode(), is(HttpStatus.CREATED));
+        BidDTO createdBid = responseEntity.getBody();
+
+        assertThat(createdBid.getId(), is(notNullValue()));
+        assertThat(createdBid.getAmount(), is(MAX_BUDGET_AMOUNT - 10));
+        assertThat(createdBid.getProjectId(), is(createdProject.getId()));
+        assertThat(createdBid.getBuyerId(), is(createdBuyer.getId()));
+
+        // verify that project lowestBid matches
+        createdProject = restTemplate.getForObject(getUriForPath(RequestMappings.PROJECTS + "/" + createdProject
+                .getId()), ProjectDTO.class);
+
+        assertThat(createdProject.getLowestBidAmount(), is(MAX_BUDGET_AMOUNT - 10));
+
+        // submit a higher bid (verify it fails)
+        bidDTO.setAmount(MAX_BUDGET_AMOUNT - 5);
+        ResponseEntity<ErrorDetails> errorResponseEntity = restTemplate.postForEntity(getUriForPath(
+                RequestMappings.BIDS), bidDTO, ErrorDetails.class);
+        assertThat(errorResponseEntity.getStatusCode(), is(HttpStatus.CONFLICT));
+        ErrorDetails errorDetails = errorResponseEntity.getBody();
+        assertThat(errorDetails.getMessage(), is("Bid must be lower than " + (MAX_BUDGET_AMOUNT - 10)));
     }
 
 }
