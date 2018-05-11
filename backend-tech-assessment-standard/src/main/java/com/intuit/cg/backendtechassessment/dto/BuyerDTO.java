@@ -2,6 +2,8 @@ package com.intuit.cg.backendtechassessment.dto;
 
 import javax.validation.constraints.NotBlank;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 import io.swagger.annotations.ApiModelProperty;
 
 public class BuyerDTO {
@@ -38,6 +40,10 @@ public class BuyerDTO {
 
     public void setLastName(String lastName) {
         this.lastName = lastName;
+    }
+
+    public String toString() {
+        return ToStringBuilder.reflectionToString(this);
     }
 
 }

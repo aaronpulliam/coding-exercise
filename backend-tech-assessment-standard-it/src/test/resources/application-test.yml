@@ -1,0 +1,14 @@
+logging:
+  level:
+    org.springframework: INFO
+    com.intuit.cg.backendtechassessment: DEBUG
+    org.hibernate: INFO
+  
+spring:  
+  jpa:
+    properties:
+      hibernate:
+        show_sql: false
+        use_sql_comments: false
+        format_sql: false
+  

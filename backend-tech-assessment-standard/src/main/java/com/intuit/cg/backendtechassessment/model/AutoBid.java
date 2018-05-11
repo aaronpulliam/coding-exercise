@@ -12,19 +12,19 @@ import javax.persistence.Table;
 import javax.persistence.Version;
 
 @Entity
-@Table(name = "bid")
-public class Bid {
+@Table(name = "autobid")
+public class AutoBid {
 
     @Id
     @GeneratedValue
-    @Column(name = "bid_id")
+    @Column(name = "autobid_id")
     private Long id;
 
     @Version
     private int version;
 
-    @Column(name = "amount", nullable = false)
-    private Long amount;
+    @Column(name = "minimum_amount", nullable = false)
+    private Long minimumAmount;
 
     @Column(name = "bid_time", nullable = false)
     private OffsetDateTime bidTime = OffsetDateTime.now();
@@ -35,14 +35,7 @@ public class Bid {
 
     private Long projectId;
 
-    protected Bid() {
-
-    }
-
-    public Bid(Long amount, Buyer buyer, Long projectId) {
-        this.amount = amount;
-        this.buyer = buyer;
-        this.projectId = projectId;
+    protected AutoBid() {
     }
 
     public Long getId() {
@@ -61,12 +54,12 @@ public class Bid {
         this.version = version;
     }
 
-    public Long getAmount() {
-        return amount;
+    public Long getMinimumAmount() {
+        return minimumAmount;
     }
 
-    public void setAmount(Long amount) {
-        this.amount = amount;
+    public void setMinimumAmount(Long minimumAmount) {
+        this.minimumAmount = minimumAmount;
     }
 
     public Buyer getBuyer() {

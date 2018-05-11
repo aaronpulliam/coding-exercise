@@ -37,6 +37,7 @@ public class ControllerExceptionHandler {
     @ExceptionHandler(NotFoundException.class)
     @ResponseBody
     public ErrorDetails handleNotFound(Exception e) {
+        logger.debug("Request threw exception", e);
         return new ErrorDetails(e.getMessage());
     }
 
@@ -44,6 +45,7 @@ public class ControllerExceptionHandler {
     @ExceptionHandler(OperationNotPermittedException.class)
     @ResponseBody
     public ErrorDetails handleConflict(Exception e) {
+        logger.debug("Request threw exception", e);
         return new ErrorDetails(e.getMessage());
     }
 
@@ -56,6 +58,7 @@ public class ControllerExceptionHandler {
         if (fieldError != null) {
             message = fieldError.getDefaultMessage();
         }
+        logger.debug("Request threw exception", e);
         return new ErrorDetails(message != null ? message : "Validation failed");
     }
 

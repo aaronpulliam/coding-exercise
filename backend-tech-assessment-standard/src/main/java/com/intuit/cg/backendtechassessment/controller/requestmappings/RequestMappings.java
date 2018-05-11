@@ -5,6 +5,7 @@ public class RequestMappings {
     public static final String SELLERS = "/sellers";
     public static final String BUYERS = "/buyers";
     public static final String BIDS = "/bids";
+    public static final String AUTOBIDS = "/autobids";
 
     private RequestMappings() {
     }

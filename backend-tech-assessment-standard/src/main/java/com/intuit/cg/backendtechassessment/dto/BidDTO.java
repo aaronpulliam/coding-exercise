@@ -3,6 +3,8 @@ package com.intuit.cg.backendtechassessment.dto;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 import io.swagger.annotations.ApiModelProperty;
 
 public class BidDTO {
@@ -52,6 +54,10 @@ public class BidDTO {
 
     public void setBuyerId(Long buyerId) {
         this.buyerId = buyerId;
+    }
+
+    public String toString() {
+        return ToStringBuilder.reflectionToString(this);
     }
 
 }

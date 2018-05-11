@@ -5,10 +5,12 @@ import java.time.OffsetDateTime;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 
+import com.intuit.cg.backendtechassessment.dto.AutoBidDTO;
 import com.intuit.cg.backendtechassessment.dto.BidDTO;
 import com.intuit.cg.backendtechassessment.dto.BuyerDTO;
 import com.intuit.cg.backendtechassessment.dto.ProjectDTO;
 import com.intuit.cg.backendtechassessment.dto.SellerDTO;
+import com.intuit.cg.backendtechassessment.model.AutoBid;
 import com.intuit.cg.backendtechassessment.model.Bid;
 import com.intuit.cg.backendtechassessment.model.Buyer;
 import com.intuit.cg.backendtechassessment.model.Project;
@@ -61,7 +63,19 @@ public class ModelConverter {
     }
 
     public BidDTO fromBid(Bid bid) {
-        return modelMapper.map(bid, BidDTO.class);
+        BidDTO bidDTO = modelMapper.map(bid, BidDTO.class);
+        bidDTO.setBuyerId(bid.getBuyer().getId());
+        return bidDTO;
+    }
+
+    public AutoBid toAutoBid(AutoBidDTO autoBidDTO) {
+        return modelMapper.map(autoBidDTO, AutoBid.class);
+    }
+
+    public AutoBidDTO fromAutoBid(AutoBid bid) {
+        AutoBidDTO autoBidDTO = modelMapper.map(bid, AutoBidDTO.class);
+        autoBidDTO.setBuyerId(bid.getBuyer().getId());
+        return autoBidDTO;
     }
 
 }

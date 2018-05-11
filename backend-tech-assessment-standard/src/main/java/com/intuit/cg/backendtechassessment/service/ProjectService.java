@@ -53,7 +53,10 @@ public class ProjectService {
 
     public void updateLowestBidIfBidIsLower(long projectId, Bid bid) {
         validateBidIsLower(projectId, bid);
+        updateLowestBid(projectId, bid);
+    }
 
+    void updateLowestBid(long projectId, Bid bid) {
         Project project = getProjectById(projectId);
         project.setLowestBid(bid);
         projectRepository.save(project);
