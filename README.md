@@ -41,7 +41,7 @@ Installation Instructions
     Apache Maven 3.5.3 (3383c37e1f9e9b3bc3df5050c29c8aff9f295297; 2018-02-24T11:49:05-08:00)
     ...
 ```
-- Download a zip file of the application to a local directory: [master.zip](https://github.com/aaronpulliam/coding-exercise/archive/v0.0.1.zip)
+- Download a zip file of the application to a local directory: [master.zip](https://github.com/aaronpulliam/coding-exercise/archive/v0.0.2.zip)
 
 - Extract the files in the archive
 
