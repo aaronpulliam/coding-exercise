@@ -7,7 +7,7 @@ Includes
 1. Two Maven modules:
     - backend-tech-assessment-standard: Main application module - [pom.xml](backend-tech-assessment-standard/pom.xml)
     - backend-tech-assessment-standard-it: Integration test module - [pom.xml](backend-tech-assessment-standard/pom.xml)
-1. Runnable Spring Boot Application: [BackendTechAssessmentApplication](src/main/java/com/intuit/cg/backendtechassessment/BackendTechAssessmentApplication.java)
+1. Runnable Spring Boot Application: [BackendTechAssessmentApplication](backend-tech-assessment-standard/src/main/java/com/intuit/cg/backendtechassessment/BackendTechAssessmentApplication.java)
 1. Application properties: [application.yml](backend-tech-assessment-standard/src/main/resources/application.yml)
 1. REST endpoint definitions - [RequestMappings.java](backend-tech-assessment-standard/src/main/java/com/intuit/cg/backendtechassessment/controller/requestmappings/RequestMappings.java)
 1. Controller classes: [controllers](backend-tech-assessment-standard/src/main/java/com/intuit/cg/backendtechassessment/controller)
@@ -15,6 +15,7 @@ Includes
 1. Data Transfer Object classes: [DTOs](backend-tech-assessment-standard/src/main/java/com/intuit/cg/backendtechassessment/dto)
 1. Repository definitions: [repositories](backend-tech-assessment-standard/src/main/java/com/intuit/cg/backendtechassessment/repository)
 1. Service classes: [services](backend-tech-assessment-standard/src/main/java/com/intuit/cg/backendtechassessment/service)
+1. Converter class for converting to/from DTOs: [ModelConverter.java](backend-tech-assessment-standard/src/main/java/com/intuit/cg/backendtechassessment/service/ModelConverter.java)
 
 Requirements
 ------------
@@ -28,18 +29,18 @@ Required Software
 Installation Instructions
 ------------
 - Verify the version of Java installed (must be Java 1.8 or higher)
-
+```
     $ java -version
     java version "1.8.0_161"
     Java(TM) SE Runtime Environment (build 1.8.0_161-b12)
     Java HotSpot(TM) 64-Bit Server VM (build 25.161-b12, mixed mode)
-
+```
 - Verify the version of Maven installed (must be Maven 3.2 or higher)
-
+```
     $ mvn -v
     Apache Maven 3.5.3 (3383c37e1f9e9b3bc3df5050c29c8aff9f295297; 2018-02-24T11:49:05-08:00)
     ...
-
+```
 - Download a zip file of the application to a local directory: [master.zip](https://github.com/aaronpulliam/coding-exercise/archive/master.zip)
 
 - Extract the files in the archive
@@ -50,15 +51,15 @@ Running the application
 - From the command-line, change your current working directory to the backend-tech-assessment-standard subdirectory of the extracted files
 
 - Build and launch the application from the command-line using the following command:
-
+```
     ./mvnw spring-boot:run
-
+```
 - As the application is building and starting up, it will output a lot of information to the command window. After the web application has finished starting up, the output should stop and you should see a "Started BackendTechAssesmentAppliation" message similar to the following: 
 
     2018-05-11 16:03:45.676  INFO 19824 --- [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 8080 (http) with context path ''
     2018-05-11 16:03:45.685  INFO 19824 --- [  restartedMain] c.i.c.b.BackendTechAssessmentApplication : Started BackendTechAssessmentApplication in 11.09 seconds (JVM running for 11.876)
 
-- With the web application running, go to Swagger UI page with your browser: [http://localhost:8080/swagger-ui.html/](http://localhost:8080/swagger-ui.html/). Swagger UI allows you to view the API definitions and make calls to it.
+- With the web application running, go to Swagger UI page with your browser: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html). Swagger UI allows you to view the API definitions and make calls to it.
 
 - The following steps can be followed to walk-through the process of creating a project, submitting bids, and viewing the project status:
     1. [Register a seller](http://localhost:8080/swagger-ui.html#!/seller45controller/registerSellerUsingPOST)
@@ -79,7 +80,8 @@ Running the application
 Design Notes
 ------------
 * Below is a sketch of the user stories for building the application. The database is not being pre-populated
-with any data, so APIs were added to allow buyers and sellers to be added. 
+with any data, so APIs were added to allow buyers and sellers to be added. No authentication or security is in 
+place.
     * **Register as a buyer:**   
     A buyer can register on the site. The buyer provides a first name and last name and receives an id. 
     * **Register as a seller:**   
