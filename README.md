@@ -52,7 +52,7 @@ Running the application
 
 - Build and launch the application from the command-line using the following command:
 ```
-    ./mvnw spring-boot:run
+    mvn spring-boot:run
 ```
 - As the application is building and starting up, it will output a lot of information to the command window. After the web application has finished starting up, the output should stop and you should see a "Started BackendTechAssesmentAppliation" message similar to the following: 
 
