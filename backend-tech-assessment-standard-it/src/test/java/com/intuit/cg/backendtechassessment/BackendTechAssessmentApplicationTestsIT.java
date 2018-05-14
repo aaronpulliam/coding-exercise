@@ -2,11 +2,13 @@ package com.intuit.cg.backendtechassessment;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 import java.time.OffsetDateTime;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,72 +48,270 @@ public class BackendTechAssessmentApplicationTestsIT {
         return "http://localhost:" + port + path;
     }
 
+    private BuyerDTO firstSampleBuyerDTO = new BuyerDTO();
+    private BuyerDTO secondSampleBuyerDTO = new BuyerDTO();
+    private BuyerDTO thirdSampleBuyerDTO = new BuyerDTO();
+
+    @Before
+    public void setUp() {
+        // setup sample data
+        firstSampleBuyerDTO.setFirstName("John");
+        firstSampleBuyerDTO.setLastName("Smith");
+
+        secondSampleBuyerDTO.setFirstName("Jack");
+        secondSampleBuyerDTO.setLastName("Smith");
+
+        thirdSampleBuyerDTO.setFirstName("Jim");
+        thirdSampleBuyerDTO.setLastName("Smith");
+    }
+
     @Test
-    public void buyerCanRegister() {
-        BuyerDTO buyerDTO = getSampleBuyer();
-
-        BuyerDTO createdBuyer = createBuyer(buyerDTO);
-
-        assertThat(createdBuyer.getFirstName(), is("John"));
-        assertThat(createdBuyer.getLastName(), is("Smith"));
-        assertThat(createdBuyer.getId(), is(notNullValue()));
+    public void postForBuyerReturnsCreated() {
+        postBuyerAndVerifyResponse(firstSampleBuyerDTO);
     }
 
-    private BuyerDTO getSampleBuyer() {
-        BuyerDTO buyerDTO = new BuyerDTO();
-        buyerDTO.setFirstName("John");
-        buyerDTO.setLastName("Smith");
-        return buyerDTO;
+    @Test
+    public void getForBuyerByIdReturnsBuyerInformation() {
+        BuyerDTO buyerDTO = firstSampleBuyerDTO;
+        BuyerDTO createdBuyer = postBuyerAndVerifyResponse(buyerDTO);
+
+        getBuyerAndVerifyResponse(createdBuyer.getId(), buyerDTO);
     }
 
-    private BuyerDTO createBuyer(BuyerDTO buyerDTO) {
+    @Test
+    public void postForSellerReturnsCreated() {
+        postSellerAndVerifyResponse(getSampleSeller());
+    }
+
+    @Test
+    public void postForProjectReturnsCreated() {
+        SellerDTO createdSeller = postSellerAndVerifyResponse(getSampleSeller());
+
+        OffsetDateTime deadline = OffsetDateTime.now().plusDays(5);
+        ProjectDTO projectDTO = getSampleProjectForSeller(createdSeller, deadline);
+
+        postProjectAndVerifyResponse(projectDTO);
+    }
+
+    @Test
+    public void postForProjectWithoutSellerFails() {
+
+        OffsetDateTime deadline = OffsetDateTime.now().plusDays(5);
+        ProjectDTO projectDTO = new ProjectDTO();
+        projectDTO.setDescription("description");
+        projectDTO.setDeadline(deadline);
+        projectDTO.setMaximumBudget(MAX_BUDGET_AMOUNT);
+
+        ResponseEntity<ErrorDetails> responseEntity = restTemplate.postForEntity(getUriForPath(
+                RequestMappings.PROJECTS), projectDTO, ErrorDetails.class);
+
+        assertThat(responseEntity.getStatusCode(), is(HttpStatus.UNPROCESSABLE_ENTITY));
+        ErrorDetails errorDetails = responseEntity.getBody();
+        assertThat(errorDetails.getMessage(), is("Project must have a seller"));
+    }
+
+    @Test
+    public void getForProjectByIdReturnsProjectInformation() {
+        SellerDTO createdSeller = postSellerAndVerifyResponse(getSampleSeller());
+
+        OffsetDateTime deadline = OffsetDateTime.now().plusDays(5);
+        ProjectDTO projectDTO = getSampleProjectForSeller(createdSeller, deadline);
+
+        ProjectDTO createdProject = postProjectAndVerifyResponse(projectDTO);
+
+        getProjectAndVerifyResponse(createdProject, null, null);
+    }
+
+    @Test
+    public void submitBid() throws InterruptedException {
+        // create buyer and seller
+        BuyerDTO createdBuyer = postBuyerAndVerifyResponse(firstSampleBuyerDTO);
+        SellerDTO createdSeller = postSellerAndVerifyResponse(getSampleSeller());
+
+        // create project
+        OffsetDateTime deadline = OffsetDateTime.now().plusNanos(TimeUnit.NANOSECONDS.convert(1000,
+                TimeUnit.MILLISECONDS));
+        ProjectDTO createdProject = postProjectAndVerifyResponse(getSampleProjectForSeller(createdSeller, deadline));
+
+        // submit bid
+        Long bidAmount = MAX_BUDGET_AMOUNT - 10;
+        postBidForProjectAndVerifyResponse(createdProject.getId(), createdBuyer.getId(), bidAmount);
+
+        // verify amount of lowestBid on project
+        getProjectAndVerifyResponse(createdProject, MAX_BUDGET_AMOUNT - 10, null);
+
+        // submit a higher bid and verify it fails
+        postBidForProjectAndVerifyFailure(createdProject.getId(), createdBuyer.getId(), MAX_BUDGET_AMOUNT - 5,
+                HttpStatus.UNPROCESSABLE_ENTITY, "Bid must be lower than " + bidAmount);
+
+        // wait for project deadline to pass
+        while (deadline.isAfter(OffsetDateTime.now())) {
+            Thread.sleep(10);
+        }
+
+        // submit a bid and verify it fails
+        bidAmount = MAX_BUDGET_AMOUNT - 20;
+        postBidForProjectAndVerifyFailure(createdProject.getId(), createdBuyer.getId(), bidAmount,
+                HttpStatus.UNPROCESSABLE_ENTITY, "Bid deadline has passed");
+
+        // checking for winning buyer id
+        getProjectAndVerifyResponse(createdProject, MAX_BUDGET_AMOUNT - 10, createdBuyer.getId());
+    }
+
+    @Test
+    public void verifyAutoBid() throws InterruptedException {
+
+        // create three buyers:
+        BuyerDTO firstCreatedBuyer = postBuyerAndVerifyResponse(firstSampleBuyerDTO);
+        BuyerDTO secondCreatedBuyer = postBuyerAndVerifyResponse(secondSampleBuyerDTO);
+        BuyerDTO thirdCreatedBuyer = postBuyerAndVerifyResponse(thirdSampleBuyerDTO);
+
+        // create seller
+        SellerDTO createdSeller = postSellerAndVerifyResponse(getSampleSeller());
+
+        // create project
+        OffsetDateTime deadline = OffsetDateTime.now().plusDays(5);
+        ProjectDTO createdProject = postProjectAndVerifyResponse(getSampleProjectForSeller(createdSeller, deadline));
+
+        // add autobid for firstCreatedBuyer with minimum amount of 20, resulting in bid
+        // of 20
+        Long autoBidAmount = 20l;
+        postAutoBidForProjectAndVerifyResponse(createdProject.getId(), firstCreatedBuyer.getId(), autoBidAmount);
+        getProjectAndVerifyResponse(createdProject, MAX_BUDGET_AMOUNT, null);
+
+        // update existing autobid for firstCreatedBuyer to minimum of 25 (from 20),
+        // result is no change in bids
+        postAutoBidForProjectAndVerifyResponse(createdProject.getId(), firstCreatedBuyer.getId(), 25l);
+
+        // verify lowest bid is for 20
+        getProjectAndVerifyResponse(createdProject, MAX_BUDGET_AMOUNT, null);
+
+        // add autobid for secondCreatedBuyer with minimum amount of 15 and verify
+        // lowest bid is 24
+        autoBidAmount = 15l;
+        postAutoBidForProjectAndVerifyResponse(createdProject.getId(), secondCreatedBuyer.getId(), autoBidAmount);
+        getProjectAndVerifyResponse(createdProject, 24l, null);
+
+        // add regular bid for thirdCreatedBuyer with minimum amount of 23 and verify
+        // lowest bid is 22
+        Long bidAmount = 23l;
+        postBidForProjectAndVerifyResponse(createdProject.getId(), thirdCreatedBuyer.getId(), bidAmount);
+        getProjectAndVerifyResponse(createdProject, 22l, null);
+
+        // add regular bid for thirdCreatedBuyer with minimum amount of 15 and verify
+        // lowest bid is 15
+        bidAmount = 15l;
+        postBidForProjectAndVerifyResponse(createdProject.getId(), thirdCreatedBuyer.getId(), bidAmount);
+        getProjectAndVerifyResponse(createdProject, 15l, null);
+
+        // add regular bid for thirdCreatedBuyer with minimum amount of 15 and verify
+        // lowest bid is 15
+        bidAmount = 14l;
+        postBidForProjectAndVerifyResponse(createdProject.getId(), thirdCreatedBuyer.getId(), bidAmount);
+        getProjectAndVerifyResponse(createdProject, 14l, null);
+    }
+
+    private AutoBidDTO postAutoBidForProjectAndVerifyResponse(Long projectId, Long buyerId, Long autoBidAmount) {
+        AutoBidDTO autoBidDTO = new AutoBidDTO();
+        autoBidDTO.setBuyerId(buyerId);
+        autoBidDTO.setProjectId(projectId);
+        autoBidDTO.setMinimumAmount(autoBidAmount);
+
+        ResponseEntity<AutoBidDTO> responseEntity = restTemplate.exchange(getUriForPath(RequestMappings.AUTOBIDS),
+                HttpMethod.PUT, new HttpEntity<AutoBidDTO>(autoBidDTO), AutoBidDTO.class);
+
+        assertThat(responseEntity.getStatusCode(), is(HttpStatus.CREATED));
+        AutoBidDTO createdBid = responseEntity.getBody();
+
+        assertThat(createdBid.getId(), is(notNullValue()));
+        assertThat(createdBid.getMinimumAmount(), is(autoBidAmount));
+        assertThat(createdBid.getProjectId(), is(projectId));
+        assertThat(createdBid.getBuyerId(), is(buyerId));
+        return createdBid;
+    }
+
+    private void postBidForProjectAndVerifyFailure(Long projectId, Long buyerId, Long amount, HttpStatus httpStatus,
+            String errorMessage) {
+        BidDTO bidDTO = new BidDTO();
+        bidDTO.setBuyerId(buyerId);
+        bidDTO.setProjectId(projectId);
+        bidDTO.setAmount(amount);
+
+        ResponseEntity<ErrorDetails> errorResponseEntity = restTemplate.postForEntity(getUriForPath(
+                RequestMappings.BIDS), bidDTO, ErrorDetails.class);
+
+        assertThat(errorResponseEntity.getStatusCode(), is(httpStatus));
+        ErrorDetails errorDetails = errorResponseEntity.getBody();
+        assertThat(errorDetails.getMessage(), is(errorMessage));
+    }
+
+    private BidDTO postBidForProjectAndVerifyResponse(Long projectId, Long buyerId, Long amount) {
+        BidDTO bidDTO = new BidDTO();
+        bidDTO.setBuyerId(buyerId);
+        bidDTO.setProjectId(projectId);
+        bidDTO.setAmount(amount);
+
+        ResponseEntity<BidDTO> responseEntity = restTemplate.postForEntity(getUriForPath(RequestMappings.BIDS), bidDTO,
+                BidDTO.class);
+
+        assertThat(responseEntity.getStatusCode(), is(HttpStatus.CREATED));
+        BidDTO createdBid = responseEntity.getBody();
+
+        assertThat(createdBid.getId(), is(notNullValue()));
+        assertThat(createdBid.getAmount(), is(amount));
+        assertThat(createdBid.getProjectId(), is(projectId));
+        assertThat(createdBid.getBuyerId(), is(buyerId));
+        return bidDTO;
+    }
+
+    private ProjectDTO getProjectAndVerifyResponse(ProjectDTO createdProject, Long lowestBidAmount,
+            Long winningBidderId) {
+        ProjectDTO projectDTO = restTemplate.getForObject(getUriForPath(RequestMappings.PROJECTS + "/" + createdProject
+                .getId()), ProjectDTO.class);
+
+        assertThat(projectDTO.getId(), is(createdProject.getId()));
+        assertThat(projectDTO.getDescription(), is(createdProject.getDescription()));
+        assertThat(projectDTO.getDeadline(), is(createdProject.getDeadline()));
+        assertThat(projectDTO.getMaximumBudget(), is(createdProject.getMaximumBudget()));
+        assertThat(projectDTO.getSellerId(), is(createdProject.getSellerId()));
+        assertThat(projectDTO.getLowestBidAmount(), is(lowestBidAmount));
+        assertThat(projectDTO.getWinningBidderId(), is(winningBidderId));
+        return projectDTO;
+    }
+
+    private SellerDTO postSellerAndVerifyResponse(SellerDTO sellerDTO) {
+        ResponseEntity<SellerDTO> responseEntity = restTemplate.postForEntity(getUriForPath(RequestMappings.SELLERS),
+                sellerDTO, SellerDTO.class);
+
+        assertThat(responseEntity.getStatusCode(), is(HttpStatus.CREATED));
+        SellerDTO createdSeller = responseEntity.getBody();
+
+        assertThat(createdSeller.getFirstName(), is(sellerDTO.getFirstName()));
+        assertThat(createdSeller.getLastName(), is(sellerDTO.getLastName()));
+        assertThat(createdSeller.getId(), is(notNullValue()));
+        return createdSeller;
+    }
+
+    private void getBuyerAndVerifyResponse(Long buyerId, BuyerDTO buyerDTO) {
+        BuyerDTO retrievedBuyer = restTemplate.getForObject(getUriForPath(RequestMappings.BUYERS + "/" + buyerId),
+                BuyerDTO.class);
+
+        assertThat(retrievedBuyer.getId(), is(buyerId));
+        assertThat(retrievedBuyer.getFirstName(), is(buyerDTO.getFirstName()));
+        assertThat(retrievedBuyer.getLastName(), is(buyerDTO.getLastName()));
+    }
+
+    private BuyerDTO postBuyerAndVerifyResponse(BuyerDTO buyerDTO) {
         ResponseEntity<BuyerDTO> responseEntity = restTemplate.postForEntity(getUriForPath(RequestMappings.BUYERS),
                 buyerDTO, BuyerDTO.class);
 
         assertThat(responseEntity.getStatusCode(), is(HttpStatus.CREATED));
         BuyerDTO createdBuyer = responseEntity.getBody();
+
+        assertThat(createdBuyer.getFirstName(), is(buyerDTO.getFirstName()));
+        assertThat(createdBuyer.getLastName(), is(buyerDTO.getLastName()));
+        assertThat(createdBuyer.getId(), is(notNullValue()));
         return createdBuyer;
-    }
-
-    @Test
-    public void retrieveBuyer() {
-        BuyerDTO buyerDTO = getSampleBuyer();
-
-        BuyerDTO createdBuyer = createBuyer(buyerDTO);
-
-        buyerDTO = restTemplate.getForObject(getUriForPath(RequestMappings.BUYERS + "/" + createdBuyer.getId()),
-                BuyerDTO.class);
-
-        assertThat(buyerDTO.getId(), is(createdBuyer.getId()));
-        assertThat(buyerDTO.getFirstName(), is("John"));
-        assertThat(buyerDTO.getLastName(), is("Smith"));
-    }
-
-    @Test
-    public void sellerCanRegister() {
-        SellerDTO sellerDTO = getSampleSeller();
-
-        SellerDTO createdSeller = createSeller(sellerDTO);
-
-        assertThat(createdSeller.getFirstName(), is("Jane"));
-        assertThat(createdSeller.getLastName(), is("Doe"));
-        assertThat(createdSeller.getId(), is(notNullValue()));
-    }
-
-    @Test
-    public void sellerCanSubmitsProjects() {
-        SellerDTO sellerDTO = getSampleSeller();
-        SellerDTO createdSeller = createSeller(sellerDTO);
-
-        OffsetDateTime deadline = OffsetDateTime.now().plusDays(5);
-        ProjectDTO projectDTO = getSampleProjectForSeller(createdSeller, deadline);
-
-        ProjectDTO createdProject = createProject(projectDTO);
-
-        assertThat(createdProject.getDescription(), is("description"));
-        assertThat(createdProject.getDeadline().toEpochSecond(), is(deadline.toEpochSecond()));
-        assertThat(createdProject.getMaximumBudget(), is(MAX_BUDGET_AMOUNT));
-        assertThat(createdProject.getSellerId(), is(notNullValue()));
     }
 
     private ProjectDTO getSampleProjectForSeller(SellerDTO createdSeller, OffsetDateTime deadline) {
@@ -132,239 +332,20 @@ public class BackendTechAssessmentApplicationTestsIT {
         return sellerDTO;
     }
 
-    @Test
-    public void submitProject() {
-        SellerDTO sellerDTO = getSampleSeller();
-        SellerDTO createdSeller = createSeller(sellerDTO);
+    private ProjectDTO postProjectAndVerifyResponse(ProjectDTO projectDTO) {
+        ResponseEntity<ProjectDTO> responseEntity = restTemplate.postForEntity(getUriForPath(RequestMappings.PROJECTS),
+                projectDTO, ProjectDTO.class);
 
-        OffsetDateTime deadline = OffsetDateTime.now().plusDays(5);
-        ProjectDTO projectDTO = getSampleProjectForSeller(createdSeller, deadline);
+        assertThat(responseEntity.getStatusCode(), is(HttpStatus.CREATED));
+        ProjectDTO createdProject = responseEntity.getBody();
 
-        ProjectDTO createdProject = createProject(projectDTO);
-
-        assertThat(createdProject.getId(), is(notNullValue()));
         assertThat(createdProject.getDescription(), is(projectDTO.getDescription()));
         assertThat(createdProject.getDeadline().toEpochSecond(), is(projectDTO.getDeadline().toEpochSecond()));
         assertThat(createdProject.getMaximumBudget(), is(projectDTO.getMaximumBudget()));
         assertThat(createdProject.getSellerId(), is(projectDTO.getSellerId()));
-    }
-
-    @Test
-    public void retrieveProject() {
-        SellerDTO sellerDTO = getSampleSeller();
-        SellerDTO createdSeller = createSeller(sellerDTO);
-
-        OffsetDateTime deadline = OffsetDateTime.now().plusDays(5);
-        ProjectDTO projectDTO = getSampleProjectForSeller(createdSeller, deadline);
-
-        ProjectDTO createdProject = createProject(projectDTO);
-
-        projectDTO = restTemplate.getForObject(getUriForPath(RequestMappings.PROJECTS + "/" + createdProject.getId()),
-                ProjectDTO.class);
-
-        assertThat(projectDTO.getId(), is(createdProject.getId()));
-        assertThat(projectDTO.getDescription(), is(createdProject.getDescription()));
-        assertThat(projectDTO.getDeadline(), is(createdProject.getDeadline()));
-        assertThat(projectDTO.getMaximumBudget(), is(createdProject.getMaximumBudget()));
-        assertThat(createdSeller.getId(), is(createdProject.getSellerId()));
-    }
-
-    private ProjectDTO createProject(ProjectDTO projectDTO) {
-        ResponseEntity<ProjectDTO> responseEntity = restTemplate.postForEntity(getUriForPath(RequestMappings.PROJECTS),
-                projectDTO, ProjectDTO.class);
-        assertThat(responseEntity.getStatusCode(), is(HttpStatus.CREATED));
-        return responseEntity.getBody();
-    }
-
-    private SellerDTO createSeller(SellerDTO sellerDTO) {
-        ResponseEntity<SellerDTO> responseEntity = restTemplate.postForEntity(getUriForPath(RequestMappings.SELLERS),
-                sellerDTO, SellerDTO.class);
-
-        assertThat(responseEntity.getStatusCode(), is(HttpStatus.CREATED));
-        return responseEntity.getBody();
-    }
-
-    @Test
-    public void submitBid() throws InterruptedException {
-
-        BuyerDTO createdBuyer = createBuyer(getSampleBuyer());
-        SellerDTO createdSeller = createSeller(getSampleSeller());
-
-        OffsetDateTime deadline = OffsetDateTime.now().plusNanos(TimeUnit.NANOSECONDS.convert(500,
-                TimeUnit.MILLISECONDS));
-        ProjectDTO createdProject = createProject(getSampleProjectForSeller(createdSeller, deadline));
-
-        BidDTO bidDTO = new BidDTO();
-        bidDTO.setBuyerId(createdBuyer.getId());
-        bidDTO.setProjectId(createdProject.getId());
-        bidDTO.setAmount(MAX_BUDGET_AMOUNT - 10);
-
-        // post initial bid
-        ResponseEntity<BidDTO> responseEntity = restTemplate.postForEntity(getUriForPath(RequestMappings.BIDS), bidDTO,
-                BidDTO.class);
-
-        assertThat(responseEntity.getStatusCode(), is(HttpStatus.CREATED));
-        BidDTO createdBid = responseEntity.getBody();
-
-        assertThat(createdBid.getId(), is(notNullValue()));
-        assertThat(createdBid.getAmount(), is(MAX_BUDGET_AMOUNT - 10));
-        assertThat(createdBid.getProjectId(), is(createdProject.getId()));
-        assertThat(createdBid.getBuyerId(), is(createdBuyer.getId()));
-
-        // verify that project lowestBid matches
-        createdProject = restTemplate.getForObject(getUriForPath(RequestMappings.PROJECTS + "/" + createdProject
-                .getId()), ProjectDTO.class);
-
-        assertThat(createdProject.getLowestBidAmount(), is(MAX_BUDGET_AMOUNT - 10));
-
-        // submit a higher bid (verify it fails)
-        bidDTO.setAmount(MAX_BUDGET_AMOUNT - 5);
-        ResponseEntity<ErrorDetails> errorResponseEntity = restTemplate.postForEntity(getUriForPath(
-                RequestMappings.BIDS), bidDTO, ErrorDetails.class);
-        assertThat(errorResponseEntity.getStatusCode(), is(HttpStatus.UNPROCESSABLE_ENTITY));
-        ErrorDetails errorDetails = errorResponseEntity.getBody();
-        assertThat(errorDetails.getMessage(), is("Bid must be lower than " + (MAX_BUDGET_AMOUNT - 10)));
-
-        // submit a bid after bidding closes
-        while (deadline.isAfter(OffsetDateTime.now())) {
-            Thread.sleep(10);
-        }
-        bidDTO.setAmount(MAX_BUDGET_AMOUNT - 20);
-        errorResponseEntity = restTemplate.postForEntity(getUriForPath(RequestMappings.BIDS), bidDTO,
-                ErrorDetails.class);
-        assertThat(errorResponseEntity.getStatusCode(), is(HttpStatus.UNPROCESSABLE_ENTITY));
-        errorDetails = errorResponseEntity.getBody();
-        assertThat(errorDetails.getMessage(), is("Bid deadline has passed"));
-
-        // checking for winning buyer id
-        createdProject = restTemplate.getForObject(getUriForPath(RequestMappings.PROJECTS + "/" + createdProject
-                .getId()), ProjectDTO.class);
-
-        assertThat(createdProject.getLowestBidAmount(), is(MAX_BUDGET_AMOUNT - 10));
-        assertThat(createdProject.getWinningBidderId(), is(createdBuyer.getId()));
-    }
-
-    @Test
-    public void verifyAutoBid() throws InterruptedException {
-
-        // setup three buyers:
-        BuyerDTO createdBuyer = createBuyer(getSampleBuyer());
-
-        BuyerDTO buyerDTO2 = new BuyerDTO();
-        buyerDTO2.setFirstName("Jack");
-        buyerDTO2.setLastName("Smith");
-        BuyerDTO createdBuyer2 = createBuyer(buyerDTO2);
-
-        BuyerDTO buyerDTO3 = new BuyerDTO();
-        buyerDTO3.setFirstName("Jim");
-        buyerDTO3.setLastName("Smith");
-        BuyerDTO createdBuyer3 = createBuyer(buyerDTO3);
-
-        SellerDTO createdSeller = createSeller(getSampleSeller());
-
-        OffsetDateTime deadline = OffsetDateTime.now().plusDays(5);
-        ProjectDTO createdProject = createProject(getSampleProjectForSeller(createdSeller, deadline));
-
-        // add autobid for buyer1 with minimum amount of 20
-        // result is bid of 20 for project
-        AutoBidDTO autoBidDTO = new AutoBidDTO();
-        autoBidDTO.setBuyerId(createdBuyer.getId());
-        autoBidDTO.setProjectId(createdProject.getId());
-        autoBidDTO.setMinimumAmount(20l);
-        ResponseEntity<AutoBidDTO> responseEntity = restTemplate.exchange(getUriForPath(RequestMappings.AUTOBIDS),
-                HttpMethod.PUT, new HttpEntity<AutoBidDTO>(autoBidDTO), AutoBidDTO.class);
-
-        assertThat(responseEntity.getStatusCode(), is(HttpStatus.CREATED));
-        AutoBidDTO createdBid = responseEntity.getBody();
-
-        assertThat(createdBid.getId(), is(notNullValue()));
-        assertThat(createdBid.getMinimumAmount(), is(20l));
-        assertThat(createdBid.getProjectId(), is(createdProject.getId()));
-        assertThat(createdBid.getBuyerId(), is(createdBuyer.getId()));
-
-        // verify lowest bid is for 20
-        createdProject = restTemplate.getForObject(getUriForPath(RequestMappings.PROJECTS + "/" + createdProject
-                .getId()), ProjectDTO.class);
-        assertThat(createdProject.getLowestBidAmount(), is(MAX_BUDGET_AMOUNT));
-
-        // update existing autobid for buyer1 to minim of 25 (from 20), result is no
-        // change in bids
-        autoBidDTO.setMinimumAmount(25l);
-        responseEntity = restTemplate.exchange(getUriForPath(RequestMappings.AUTOBIDS), HttpMethod.PUT,
-                new HttpEntity<AutoBidDTO>(autoBidDTO), AutoBidDTO.class);
-        assertThat(responseEntity.getStatusCode(), is(HttpStatus.CREATED));
-        AutoBidDTO createdBid2 = responseEntity.getBody();
-        assertThat(createdBid2.getId(), is(createdBid.getId()));
-
-        // verify lowest bid is for 20
-        createdProject = restTemplate.getForObject(getUriForPath(RequestMappings.PROJECTS + "/" + createdProject
-                .getId()), ProjectDTO.class);
-        assertThat(createdProject.getLowestBidAmount(), is(MAX_BUDGET_AMOUNT));
-
-        // add autobid for buyer2 with minimum amount of 15
-        AutoBidDTO autoBidDTO2 = new AutoBidDTO();
-        autoBidDTO2.setBuyerId(createdBuyer2.getId());
-        autoBidDTO2.setProjectId(createdProject.getId());
-        autoBidDTO2.setMinimumAmount(15l);
-        responseEntity = restTemplate.exchange(getUriForPath(RequestMappings.AUTOBIDS), HttpMethod.PUT,
-                new HttpEntity<AutoBidDTO>(autoBidDTO2), AutoBidDTO.class);
-        assertThat(responseEntity.getStatusCode(), is(HttpStatus.CREATED));
-        AutoBidDTO createdBid3 = responseEntity.getBody();
-        assertThat(createdBid3.getId(), is(notNullValue()));
-
-        // verify lowest bid is for 24
-        createdProject = restTemplate.getForObject(getUriForPath(RequestMappings.PROJECTS + "/" + createdProject
-                .getId()), ProjectDTO.class);
-        assertThat(createdProject.getLowestBidAmount(), is(24l));
-
-        // put regular bid for createdBuyer3 with minimum amount of 23
-        BidDTO bidDTO = new BidDTO();
-        bidDTO.setBuyerId(createdBuyer3.getId());
-        bidDTO.setProjectId(createdProject.getId());
-        bidDTO.setAmount(23l);
-        ResponseEntity<BidDTO> bidDTOResponseEntity = restTemplate.postForEntity(getUriForPath(RequestMappings.BIDS),
-                bidDTO, BidDTO.class);
-        assertThat(responseEntity.getStatusCode(), is(HttpStatus.CREATED));
-        bidDTO = bidDTOResponseEntity.getBody();
-        assertThat(bidDTO.getId(), is(notNullValue()));
-
-        // verify that project lowestBid matches with lowest bid of 22
-        createdProject = restTemplate.getForObject(getUriForPath(RequestMappings.PROJECTS + "/" + createdProject
-                .getId()), ProjectDTO.class);
-
-        assertThat(createdProject.getLowestBidAmount(), is(22l));
-
-        // put regular bid for createdBuyer3 with minimum amount of 15
-        bidDTO = new BidDTO();
-        bidDTO.setBuyerId(createdBuyer3.getId());
-        bidDTO.setProjectId(createdProject.getId());
-        bidDTO.setAmount(15l);
-        bidDTOResponseEntity = restTemplate.postForEntity(getUriForPath(RequestMappings.BIDS), bidDTO, BidDTO.class);
-        assertThat(responseEntity.getStatusCode(), is(HttpStatus.CREATED));
-        bidDTO = bidDTOResponseEntity.getBody();
-        assertThat(bidDTO.getId(), is(notNullValue()));
-
-        // verify that project lowestBid matches with lowest bid of 15
-        createdProject = restTemplate.getForObject(getUriForPath(RequestMappings.PROJECTS + "/" + createdProject
-                .getId()), ProjectDTO.class);
-
-        assertThat(createdProject.getLowestBidAmount(), is(15l));
-
-        // put regular bid for createdBuyer3 with minimum amount of 14
-        bidDTO = new BidDTO();
-        bidDTO.setBuyerId(createdBuyer3.getId());
-        bidDTO.setProjectId(createdProject.getId());
-        bidDTO.setAmount(14l);
-        bidDTOResponseEntity = restTemplate.postForEntity(getUriForPath(RequestMappings.BIDS), bidDTO, BidDTO.class);
-        assertThat(responseEntity.getStatusCode(), is(HttpStatus.CREATED));
-        bidDTO = bidDTOResponseEntity.getBody();
-        assertThat(bidDTO.getId(), is(notNullValue()));
-
-        // verify that project lowestBid matches with lowest bid of 14
-        createdProject = restTemplate.getForObject(getUriForPath(RequestMappings.PROJECTS + "/" + createdProject
-                .getId()), ProjectDTO.class);
-
-        assertThat(createdProject.getLowestBidAmount(), is(14l));
+        assertThat(createdProject.getLowestBidAmount(), is(nullValue()));
+        assertThat(createdProject.getWinningBidderId(), is(nullValue()));
+        return createdProject;
     }
 
 }

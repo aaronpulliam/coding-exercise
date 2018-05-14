@@ -1,9 +1,11 @@
 package com.intuit.cg.backendtechassessment.service;
 
 import javax.transaction.Transactional;
+import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.validation.annotation.Validated;
 
 import com.intuit.cg.backendtechassessment.dto.ProjectDTO;
 import com.intuit.cg.backendtechassessment.model.Bid;
@@ -14,6 +16,7 @@ import com.intuit.cg.backendtechassessment.service.exception.OperationNotPermitt
 
 @Service
 @Transactional
+@Validated
 public class ProjectService {
 
     @Autowired
@@ -23,20 +26,12 @@ public class ProjectService {
     @Autowired
     private ModelConverter modelConverter;
 
-    public ProjectDTO createProject(ProjectDTO projectDTO) {
+    public ProjectDTO createProject(@Valid ProjectDTO projectDTO) {
         Project project = modelConverter.toProject(projectDTO);
         Long sellerId = projectDTO.getSellerId();
-        if (sellerId == null) {
-            throw new OperationNotPermittedException("Project must have a seller");
-        }
         project.setSeller(sellerService.getSellerById(sellerId));
 
         return modelConverter.fromProject(projectRepository.save(project));
-    }
-
-    Project getProjectById(long id) {
-        return projectRepository.findById(id).orElseThrow(() -> new OperationNotPermittedException(
-                "Project not found"));
     }
 
     public ProjectDTO getProjectDTOById(long id) {
@@ -44,20 +39,25 @@ public class ProjectService {
                 "Project not found")));
     }
 
-    public void validateBidIsLower(long projectId, Bid bid) {
+    public void checkThatBidIsLowerThanAnyExistingBid(long projectId, Long bidAmount) {
         Project project = getProjectById(projectId);
-        if ((project.getLowestBid() != null) && (project.getLowestBid().getAmount() <= bid.getAmount())) {
+        if ((project.getLowestBid() != null) && (project.getLowestBid().getAmount() <= bidAmount)) {
             throw new OperationNotPermittedException("Bid must be lower than " + project.getLowestBid().getAmount());
         }
     }
 
-    public void updateLowestBidIfBidIsLower(long projectId, Bid bid) {
-        validateBidIsLower(projectId, bid);
-        updateLowestBid(projectId, bid);
+    public void updateLowestBidIfBidIsLower(Bid bid) {
+        checkThatBidIsLowerThanAnyExistingBid(bid.getProjectId(), bid.getAmount());
+        updateLowestBid(bid);
     }
 
-    void updateLowestBid(long projectId, Bid bid) {
-        Project project = getProjectById(projectId);
+    Project getProjectById(long id) {
+        return projectRepository.findById(id).orElseThrow(() -> new OperationNotPermittedException(
+                "Project not found"));
+    }
+
+    void updateLowestBid(Bid bid) {
+        Project project = getProjectById(bid.getProjectId());
         project.setLowestBid(bid);
         projectRepository.save(project);
     }

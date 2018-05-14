@@ -1,9 +1,11 @@
 package com.intuit.cg.backendtechassessment.service;
 
 import javax.transaction.Transactional;
+import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.validation.annotation.Validated;
 
 import com.intuit.cg.backendtechassessment.dto.BuyerDTO;
 import com.intuit.cg.backendtechassessment.model.Buyer;
@@ -13,6 +15,7 @@ import com.intuit.cg.backendtechassessment.service.exception.OperationNotPermitt
 
 @Service
 @Transactional
+@Validated
 public class BuyerService {
 
     @Autowired
@@ -20,7 +23,7 @@ public class BuyerService {
     @Autowired
     private ModelConverter modelConverter;
 
-    public BuyerDTO createBuyer(BuyerDTO buyerDTO) {
+    public BuyerDTO createBuyer(@Valid BuyerDTO buyerDTO) {
         return modelConverter.fromBuyer(buyerRepository.save(modelConverter.toBuyer(buyerDTO)));
     }
 

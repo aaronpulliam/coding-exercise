@@ -5,6 +5,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.validation.beanvalidation.MethodValidationPostProcessor;
 
 import com.intuit.cg.backendtechassessment.service.ModelConverter;
 
@@ -24,6 +25,12 @@ public class BackendTechAssessmentApplication {
     @Bean
     public ModelConverter modelConverter() {
         return new ModelConverter(modelMapper());
+    }
+
+    @Bean
+    public MethodValidationPostProcessor methodValidationPostProcessor() {
+        MethodValidationPostProcessor methodValidationPostProcessor = new MethodValidationPostProcessor();
+        return methodValidationPostProcessor;
     }
 
 }

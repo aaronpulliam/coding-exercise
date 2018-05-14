@@ -1,6 +1,7 @@
 package com.intuit.cg.backendtechassessment.service;
 
 import javax.transaction.Transactional;
+import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,7 +23,7 @@ public class SellerService {
     @Autowired
     private ModelConverter modelConverter;
 
-    public SellerDTO createSeller(SellerDTO sellerDTO) {
+    public SellerDTO createSeller(@Valid SellerDTO sellerDTO) {
         return modelConverter.fromSeller(sellerRepository.save(modelConverter.toSeller(sellerDTO)));
     }
 

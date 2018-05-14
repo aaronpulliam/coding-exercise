@@ -1,7 +1,5 @@
 package com.intuit.cg.backendtechassessment.controller;
 
-import javax.validation.Valid;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,7 +34,7 @@ public class SellerController {
     @ApiOperation("Register a seller")
     @ApiResponses(value = { @ApiResponse(code = 201, message = "Seller registered"), @ApiResponse(code = 422,
             message = "Seller could not be registered. Response body contains message with further details") })
-    public SellerDTO registerSeller(@RequestBody @ApiParam("seller's information") @Valid SellerDTO seller) {
+    public SellerDTO registerSeller(@RequestBody @ApiParam("seller's information") SellerDTO seller) {
         return sellerService.createSeller(seller);
     }
 

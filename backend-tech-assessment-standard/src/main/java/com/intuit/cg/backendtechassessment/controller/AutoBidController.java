@@ -1,7 +1,5 @@
 package com.intuit.cg.backendtechassessment.controller;
 
-import javax.validation.Valid;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -34,7 +32,7 @@ public class AutoBidController {
     @ApiOperation("Submit an autobid for a project")
     @ApiResponses(value = { @ApiResponse(code = 201, message = "AutoBid accepted"), @ApiResponse(code = 422,
             message = "AutoBid not accepted. Response body contains message with further details") })
-    public AutoBidDTO submitBid(@RequestBody @ApiParam("bid details") @Valid AutoBidDTO autobid) {
+    public AutoBidDTO submitBid(@RequestBody @ApiParam("bid details") AutoBidDTO autobid) {
         return bidService.submitAutoBid(autobid);
     }
 

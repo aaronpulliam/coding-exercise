@@ -1,10 +1,11 @@
 package com.intuit.cg.backendtechassessment.controller;
 
+import javax.validation.ConstraintViolation;
+import javax.validation.ConstraintViolationException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -50,15 +51,12 @@ public class ControllerExceptionHandler {
     }
 
     @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
-    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ExceptionHandler(ConstraintViolationException.class)
     @ResponseBody
-    public ErrorDetails handleValidation(MethodArgumentNotValidException e) {
-        FieldError fieldError = e.getBindingResult().getFieldError();
-        String message = null;
-        if (fieldError != null) {
-            message = fieldError.getDefaultMessage();
-        }
-        logger.debug("Request threw exception", e);
+    public ErrorDetails handleValidation(ConstraintViolationException e) {
+        ConstraintViolation<?> violation = e.getConstraintViolations().iterator().next();
+        String message = violation.getMessage();
+        logger.debug("Validation failure", e);
         return new ErrorDetails(message != null ? message : "Validation failed");
     }
 

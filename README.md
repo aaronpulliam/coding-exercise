@@ -41,7 +41,7 @@ Installation Instructions
     Apache Maven 3.5.3 (3383c37e1f9e9b3bc3df5050c29c8aff9f295297; 2018-02-24T11:49:05-08:00)
     ...
 ```
-- Download a zip file of the application to a local directory: [master.zip](https://github.com/aaronpulliam/coding-exercise/archive/v0.0.2.zip)
+- Download a zip file of the application to a local directory: [v0.0.3.zip](https://github.com/aaronpulliam/coding-exercise/archive/v0.0.3.zip)
 
 - Extract the files in the archive
 
@@ -59,7 +59,7 @@ Running the application
     2018-05-11 16:03:45.676  INFO 19824 --- [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 8080 (http) with context path ''
     2018-05-11 16:03:45.685  INFO 19824 --- [  restartedMain] c.i.c.b.BackendTechAssessmentApplication : Started BackendTechAssessmentApplication in 11.09 seconds (JVM running for 11.876)
 
-- With the web application running, go to Swagger UI page with your browser: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html). Swagger UI allows you to view the API definitions and make calls to it.
+- With the web application running, go to the Swagger UI page with your browser: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html). Swagger UI allows you to view the API definitions and make calls to it.
 
 - The following steps can be followed to walk-through the process of creating a project, submitting bids, and viewing the project status:
     1. [Register a seller](http://localhost:8080/swagger-ui.html#!/seller45controller/registerSellerUsingPOST)
@@ -135,7 +135,6 @@ Implementation Notes
 * To further flesh out the application, the following should be considered:
     * Adding authentication/security
     * Writing unit tests so that exception cases can be verified and code refactored
-    * Refactoring the existing integration tests by moving code into shared functions and eliminate duplicated code
     * Adding more validation on data such as maximum field sizes, etc.
     * Improving error handling such as adding finer grain exceptions to the Service layer and making sure exception
       scenarios result in a proper error message.

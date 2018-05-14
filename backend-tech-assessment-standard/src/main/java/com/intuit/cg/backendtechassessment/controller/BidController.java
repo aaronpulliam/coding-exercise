@@ -1,7 +1,5 @@
 package com.intuit.cg.backendtechassessment.controller;
 
-import javax.validation.Valid;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -34,7 +32,7 @@ public class BidController {
     @ApiOperation("Submit a bid for a project")
     @ApiResponses(value = { @ApiResponse(code = 201, message = "Bid accepted"), @ApiResponse(code = 422,
             message = "Bid not accepted. Response body contains message with further details") })
-    public BidDTO submitBid(@RequestBody @ApiParam("bid details") @Valid BidDTO bid) {
+    public BidDTO submitBid(@RequestBody @ApiParam("bid details") BidDTO bid) {
         return bidService.submitBid(bid);
     }
 

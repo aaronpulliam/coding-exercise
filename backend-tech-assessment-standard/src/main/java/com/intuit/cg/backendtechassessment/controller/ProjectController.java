@@ -1,7 +1,5 @@
 package com.intuit.cg.backendtechassessment.controller;
 
-import javax.validation.Valid;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,7 +34,7 @@ public class ProjectController {
     @ApiOperation("Create a project")
     @ApiResponses(value = { @ApiResponse(code = 201, message = "Project created"), @ApiResponse(code = 422,
             message = "Project details not acceptable. Response body contains message with further details") })
-    public ProjectDTO createProject(@RequestBody @ApiParam("project information") @Valid ProjectDTO project) {
+    public ProjectDTO createProject(@RequestBody @ApiParam("project information") ProjectDTO project) {
         return projectService.createProject(project);
     }
 
